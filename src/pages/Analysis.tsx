@@ -1086,7 +1086,7 @@ export const Analysis: React.FC = () => {
                   {report.security.cookiesDetails.map((c, i) => (
                     <div
                       key={i}
-                      className="p-3 bg-zinc-950/40 border border-fuchsia-500/10/5 rounded-xl flex flex-col gap-1.5"
+                      className="p-3 bg-zinc-950/40 border border-fuchsia-500/10 rounded-xl flex flex-col gap-1.5"
                     >
                       <div className="flex justify-between font-mono text-[10px]">
                         <span className="text-fuchsia-400 truncate max-w-30">

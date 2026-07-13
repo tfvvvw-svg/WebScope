@@ -220,9 +220,12 @@ export interface WebScanReport {
   // ⚙ Capabilities
   capabilities: SiteCapabilities;
 
-  // 📊 Scores & AI Review
+  // 📊 Scores
   scores: GeneralScore;
-  aiAnalysis: AiAnalysis;
+
+  // 🔧 Extended raw data (internal use)
+  _raw?: Record<string, any>;
+  _descriptions?: Record<string, any>;
 }
 
 export interface HistoryItem {

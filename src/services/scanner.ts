@@ -28,7 +28,7 @@ export function getScanHistory(): HistoryItem[] {
   }
 }
 
-export function saveScanReportToHistory(report: { id: string; url: string; title: string; scanDate: string; scores: { overallRating: number }; design: { colorPalette: { hex: string }[] }; category: string }): void {
+export function saveScanReportToHistory(report: { id: string; url: string; title: string; scanDate: string; scores: { overallRating: number }; design: { colorPalette: { hex: string }[] }; category: string } & Record<string, any>): void {
   try {
     const history = getScanHistory();
     const domain = getDomainName(report.url);

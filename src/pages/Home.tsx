@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useApp } from "../context/AppContext";
 import { Button } from "../components/ui/Button";
@@ -21,6 +21,23 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useLanguage } from "../context/LanguageContext";
+
+const DEMOS = ["vercel.com", "stripe.com", "github.com", "notion.so"];
+
+const FAQS = [
+  {
+    q: "Как работает сканер?",
+    a: "Сканер загружает сайт через CORS-прокси, парсит HTML, извлекает мета-теги, технологии, цвета, шрифты и анализирует безопасность.",
+  },
+  {
+    q: "Безопасно ли использовать?",
+    a: "Да, все данные хранятся локально в вашем браузере. Мы не отправляем данные на сторонние серверы.",
+  },
+  {
+    q: "Какие технологии определяются?",
+    a: "Более 120 технологий: React, Vue, Angular, Next.js, Tailwind CSS, WordPress, Shopify, Cloudflare и многие другие.",
+  },
+];
 
 const SCAN_STEPS = [
   "Connecting to remote socket...",
@@ -68,7 +85,7 @@ export const Home: React.FC = () => {
     return () => clearInterval(stepInterval);
   }, [loading, scanProgress]);
 
-  const handleScan = async (e: React.FormEvent) => {
+  const handleScan = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
     if (!url.trim()) {
       setError("Пожалуйста, введите URL сайта");
@@ -88,35 +105,14 @@ export const Home: React.FC = () => {
     } catch {
       setError("Не удалось просканировать сайт. Попробуйте снова.");
     }
-  };
+  }, [url, scanUrl, navigate]);
 
-  const demos = ["vercel.com", "stripe.com", "linear.app"];
+  const demos = DEMOS;
 
   const [activeFaq, setActiveFaq] = useState<number | null>(0);
-  const faqs = [
-    {
-      q: "Как WebScope анализирует сайты?",
-      a: "WebScope использует автоматизированные алгоритмы для определения серверных свойств, технологий (JS-фреймворки, CDN, базы данных), парсинга SEO-метаданных, аудита безопасности и мгновенной генерации оценок производительности, эквивалентных Lighthouse.",
-    },
-    {
-      q: "Можно ли анализировать сайты внутренней сети?",
-      a: "Нет, WebScope проверяет только публичные домены. Сайты внутри корпоративных сетей, за файрволами или VPN, не могут быть просканированы нашими ботами.",
-    },
-    {
-      q: 'Что такое "AI-анализ"?',
-      a: "AI-анализ использует модели машинного обучения для оценки агрегированных данных аудита и формулирует чёткие сильные стороны, слабые места и рекомендации по оптимизации для разработчиков.",
-    },
-    {
-      q: "WebScope бесплатен?",
-      a: "Да, базовый движок сканирования сайтов бесплатен для личных проектов. Для высокочастотного сканирования, расширенных сравнений и экспорта истории доступны премиум-подписки.",
-    },
-    {
-      q: "Какие данные хранятся в истории?",
-      a: "Все отчёты хранятся локально в вашем браузере (localStorage). Мы не отправляем результаты сканирования на сторонние серверы — ваши данные остаются полностью конфиденциальными.",
-    },
-  ];
+  const faqs = FAQS;
 
-  const features = [
+  const features = useMemo(() => ([
     {
       icon: <Cpu className="w-6 h-6" />,
       title: "Анализ технологического стека",
@@ -159,7 +155,7 @@ export const Home: React.FC = () => {
       color: "from-violet-500 to-fuchsia-500",
       glow: "shadow-violet-500/40",
     },
-  ];
+  ]), []);
 
   return (
     <div className="relative w-full">

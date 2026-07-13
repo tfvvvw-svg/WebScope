@@ -12,12 +12,16 @@ interface ThemeContextProps {
 const ThemeContext = createContext<ThemeContextProps | undefined>(undefined);
 
 export const ThemeProvider = ({ children }: { children: ReactNode }) => {
-  const [theme, setTheme] = useState<Theme>("dark");
+  const [theme, setTheme] = useState<Theme>(() => {
+    const saved = localStorage.getItem("app-theme");
+    return (saved as Theme) || "dark";
+  });
 
   // Apply theme class to html element
   useEffect(() => {
     const root = document.documentElement;
     root.dataset.theme = theme;
+    localStorage.setItem("app-theme", theme);
   }, [theme]);
 
   const toggleTheme = () => {

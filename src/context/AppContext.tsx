@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect } from "react";
+import { createContext, useContext, useState, useEffect, useCallback, useMemo } from "react";
 import type { ReactNode } from "react";
 import type { WebScanReport, HistoryItem } from "../types/scan";
 import { scanUrl as apiScanUrl } from "../services/apiService";
@@ -42,10 +42,10 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   // Compute favorites list from history
-  const favorites = history.filter((item) => item.isFavorite);
+  const favorites = useMemo(() => history.filter((item) => item.isFavorite), [history]);
 
   // Scan a website URL entirely in the browser (no backend required)
-  const scanUrl = async (url: string): Promise<WebScanReport> => {
+  const scanUrl = useCallback(async (url: string): Promise<WebScanReport> => {
     setLoading(true);
     setScanProgress(10);
     setCurrentReport(null);
@@ -80,20 +80,20 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       setLoading(false);
       throw error;
     }
-  };
+  }, []);
 
   // Toggle favorite status
-  const toggleFavorite = (id: string) => {
+  const toggleFavorite = useCallback((id: string) => {
     const updated = toggleFavoriteScan(id);
     setHistory(updated);
 
     if (currentReport && currentReport.id === id) {
       setCurrentReport({ ...currentReport });
     }
-  };
+  }, [currentReport]);
 
   // Delete scan from history
-  const deleteReport = (id: string) => {
+  const deleteReport = useCallback((id: string) => {
     const updated = deleteScanFromHistory(id);
     setHistory(updated);
 
@@ -107,25 +107,23 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       if (copy[1]?.id === id) copy[1] = null;
       return copy;
     });
-  };
+  }, [currentReport]);
 
   // Set report for comparison slots
-  const setCompareSlot = (index: 0 | 1, report: WebScanReport | null) => {
+  const setCompareSlot = useCallback((index: 0 | 1, report: WebScanReport | null) => {
     setCompareReports((prev) => {
       const copy = [...prev] as [WebScanReport | null, WebScanReport | null];
       copy[index] = report;
       return copy;
     });
-  };
+  }, []);
 
   // Clear comparison slots
-  const clearCompareSlots = () => {
+  const clearCompareSlots = useCallback(() => {
     setCompareReports([null, null]);
-  };
+  }, []);
 
-  return (
-    <AppContext.Provider
-      value={{
+  const contextValue = useMemo(() => ({
         history,
         favorites,
         currentReport,
@@ -137,8 +135,10 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         deleteReport,
         setCompareSlot,
         clearCompareSlots,
-      }}
-    >
+      }), [history, favorites, currentReport, compareReports, loading, scanProgress]);
+
+  return (
+    <AppContext.Provider value={contextValue}>
       {children}
     </AppContext.Provider>
   );
