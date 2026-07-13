@@ -5,6 +5,8 @@ export interface AiMessage {
   text: string;
   timestamp: number;
   sections?: AiSection[];
+  streaming?: boolean;
+  isComplete?: boolean;
 }
 
 export interface AiSection {
@@ -15,280 +17,498 @@ export interface AiSection {
   recommendations: string[];
 }
 
+type ExpertMode = "general" | "fullstack" | "uiux" | "seo" | "security";
+
+function normalize(text: string): string {
+  return text.toLowerCase().trim();
+}
+
+function containsAny(text: string, needles: string[]): boolean {
+  return needles.some((needle) => text.includes(needle));
+}
+
+function unique(values: string[]): string[] {
+  return Array.from(
+    new Set(
+      values
+        .map((value) => value?.trim())
+        .filter((value): value is string => Boolean(value)),
+    ),
+  );
+}
+
 function getSslDescription(valid: boolean): string {
   return valid
     ? "✅ Сертификат безопасности действителен. HTTPS работает корректно."
     : "❌ Сертификат отсутствует или недействителен.";
 }
 
-function answerQuestion(
+function getExpertMode(question: string): ExpertMode {
+  const q = normalize(question);
+
+  if (
+    containsAny(q, [
+      "seo",
+      "поисков",
+      "ранжир",
+      "canonical",
+      "robots",
+      "sitemap",
+    ])
+  ) {
+    return "seo";
+  }
+
+  if (
+    containsAny(q, [
+      "security",
+      "безопас",
+      "ssl",
+      "https",
+      "csp",
+      "cookie",
+      "auth",
+      "xss",
+      "csrf",
+    ])
+  ) {
+    return "security";
+  }
+
+  if (
+    containsAny(q, [
+      "design",
+      "дизайн",
+      "ui",
+      "ux",
+      "color",
+      "цвет",
+      "font",
+      "шрифт",
+      "interface",
+      "интерфейс",
+    ])
+  ) {
+    return "uiux";
+  }
+
+  if (
+    containsAny(q, [
+      "html",
+      "css",
+      "javascript",
+      "typescript",
+      "react",
+      "next",
+      "node",
+      "vite",
+      "tailwind",
+      "sql",
+      "код",
+      "помоги написать",
+      "исправь",
+      "объясни",
+    ])
+  ) {
+    return "fullstack";
+  }
+
+  return "general";
+}
+
+function buildConversationContext(history: AiMessage[]): string {
+  const relevantMessages = history.slice(-6);
+  const lastUser = [...relevantMessages]
+    .reverse()
+    .find((item) => item.role === "user")?.text;
+  const lastAssistant = [...relevantMessages]
+    .reverse()
+    .find((item) => item.role === "assistant")?.text;
+
+  if (!lastUser && !lastAssistant) {
+    return "";
+  }
+
+  const summary = [
+    lastUser ? `Последний пользовательский вопрос: ${lastUser}` : "",
+    lastAssistant ? `Предыдущий ответ: ${lastAssistant.slice(0, 220)}` : "",
+  ]
+    .filter(Boolean)
+    .join("\n");
+
+  return summary;
+}
+
+function buildSiteContextSummary(report: WebScanReport): string {
+  const frontend = unique(report.technologies?.frontend || []);
+  const backend = unique(report.technologies?.backend || []);
+  const cssFramework = unique(report.technologies?.cssFramework || []);
+  const jsLibraries = unique(report.technologies?.jsLibraries || []);
+  const analytics = unique(report.technologies?.analytics || []);
+  const fonts = unique(report.design?.fonts || []);
+  const colors =
+    report.design?.colorPalette?.slice(0, 5).map((entry) => entry.hex) || [];
+
+  return [
+    `Технологии: ${[...frontend, ...backend, ...cssFramework, ...jsLibraries].slice(0, 12).join(", ") || "не удалось подтвердить"}`,
+    `SEO: title=${report.seo?.metaTitle ? "есть" : "нет"}; description=${report.seo?.metaDescription ? "есть" : "нет"}; canonical=${report.seo?.canonicalUrl ? "есть" : "нет"}`,
+    `Безопасность: HTTPS=${report.security?.httpsEnabled ? "включён" : "отключён"}; issues=${report.security?.securityIssues?.length || 0}`,
+    `Производительность: pageSize=${report.performance?.pageSizeKb || 0}KB; requests=${report.performance?.requestsCount || 0}; lighthouse=${report.performance?.lighthouseScore?.performance || 0}/100`,
+    `Дизайн: цвета=${colors.join(", ") || "не подтверждены"}; шрифты=${fonts.join(", ") || "не подтверждены"}`,
+    `Analytics: ${analytics.join(", ") || "не подтверждены"}`,
+  ].join("\n");
+}
+
+function buildGeneralAssistantReply(
   question: string,
-  report: WebScanReport | Record<string, unknown>,
-): AiSection[] {
-  const q = question.toLowerCase();
-  const answers: AiSection[] = [];
+  history: AiMessage[],
+): { text: string; sections: AiSection[] } {
+  const q = normalize(question);
+  const mode = getExpertMode(q);
+  const memory = buildConversationContext(history);
+  const expertLabel =
+    mode === "seo"
+      ? "SEO Engineer"
+      : mode === "security"
+        ? "Security Engineer"
+        : mode === "uiux"
+          ? "Senior UI/UX Designer"
+          : mode === "fullstack"
+            ? "Senior Full Stack Developer"
+            : "Universal Assistant";
+
+  const intro = `## ${expertLabel}\n\nЯ могу помогать в режиме живого диалога, а не только по отчёту.\n\n${memory ? `> Контекст текущей сессии: ${memory}` : ""}`;
+
+  if (containsAny(q, ["привет", "hello", "hi"])) {
+    return {
+      text: `${intro}\n\nПривет! Я WebScope AI — встроенный помощник для веб-разработки, SEO, безопасности, дизайна и кодинга. Чем могу помочь прямо сейчас?`,
+      sections: [
+        {
+          title: "Общий режим",
+          facts: [
+            "Live assistant",
+            "Память сессии enabled",
+            "Поддержка веб-разработки и дизайна",
+          ],
+          explanation:
+            "AI работает как универсальный помощник и может отвечать без предварительного анализа сайта.",
+          technical: "Режим: общение, экспертная поддержка, кодирование.",
+          recommendations: [
+            "Задайте любой вопрос о WebScope, коде, SEO, дизайне или безопасности.",
+          ],
+        },
+      ],
+    };
+  }
+
+  if (
+    containsAny(q, [
+      "html",
+      "css",
+      "javascript",
+      "typescript",
+      "react",
+      "next",
+      "node",
+      "vite",
+      "tailwind",
+      "sql",
+    ])
+  ) {
+    const snippetLanguage = q.includes("html")
+      ? "html"
+      : q.includes("css")
+        ? "css"
+        : q.includes("typescript") || q.includes("ts")
+          ? "typescript"
+          : q.includes("react") || q.includes("next")
+            ? "tsx"
+            : q.includes("sql")
+              ? "sql"
+              : q.includes("node")
+                ? "javascript"
+                : "javascript";
+
+    const snippet =
+      snippetLanguage === "html"
+        ? `<section class="card">\n  <h1>WebScope UI</h1>\n  <p>Современная, чистая и концентрированная структура.</p>\n</section>`
+        : snippetLanguage === "css"
+          ? `.card {\n  border-radius: 18px;\n  background: linear-gradient(135deg, #0f172a, #1f2937);\n  box-shadow: 0 10px 30px rgba(168, 85, 247, 0.25);\n}`
+          : snippetLanguage === "typescript"
+            ? `type SiteAudit = {\n  title: string;\n  score: number;\n};\n\nconst audit: SiteAudit = { title: "WebScope", score: 92 };`
+            : snippetLanguage === "tsx"
+              ? `export function AuditCard() {\n  return <div className="glass-card">WebScope</div>;\n}`
+              : snippetLanguage === "sql"
+                ? `SELECT title, score FROM audits ORDER BY score DESC LIMIT 5;`
+                : `const auditSite = async (url: string) => {\n  console.log("Scanning", url);\n  return { ok: true };\n};`;
+
+    return {
+      text: `${intro}\n\n## Пример решения\n\n\`\`\`${snippetLanguage}\n${snippet}\n\`\`\`\n\n### Что важно\n- делайте структуру читаемой;\n- используйте реальные данные;\n- проверяйте доступность и безопасность;\n- не добавляйте абстракции без необходимости.`,
+      sections: [
+        {
+          title: "Кодинг",
+          facts: ["Поддержка HTML/CSS/JS/TS/React/Node/Vite/Tailwind/SQL"],
+          explanation:
+            "AI помогает писать и объяснять код в реальном контексте веб-проекта.",
+          technical: "Режим: code generation + review.",
+          recommendations: [
+            "Опишите задачу и я подготовлю готовый рабочий фрагмент.",
+          ],
+        },
+      ],
+    };
+  }
+
+  if (
+    containsAny(q, ["как работает dns", "dns", "ssl", "https", "certificate"])
+  ) {
+    return {
+      text: `${intro}\n\n## ${mode === "security" ? "Security" : "Networking"}\n\nDNS переводит доменное имя в IP-адрес. HTTPS и SSL защищают соединение, шифруют трафик и подтверждают подлинность сертификата.\n\n### На практике\n- DNS нужен для маршрутизации домена;\n- SSL нужен для шифрования и доверия пользователя;\n- при проблемах сначала проверяйте DNS, затем сертификат, затем заголовки безопасности.`,
+      sections: [
+        {
+          title: "Networking",
+          facts: ["DNS", "SSL", "HTTPS"],
+          explanation:
+            "Основные сетевые и безопасностные абстракции объясняются простым языком.",
+          technical: "Пример: DNS → IP → TLS → безопасный обмен.",
+          recommendations: [
+            "Если хотите, могу показать схему работы DNS/HTTPS на конкретном кейсе.",
+          ],
+        },
+      ],
+    };
+  }
+
+  return {
+    text: `${intro}\n\n## Ответ\n\nЯ готов помогать как универсальный помощник: объяснять концепции, писать код, предлагать архитектуру, помогать с SEO, безопасностью и интерфейсом.\n\n### Что я могу сделать прямо сейчас\n- объяснить технологию;\n- написать фрагмент HTML/CSS/JS/TS;\n- подсказать улучшения UX/SEO/безопасности;\n- помочь с отладкой и рефакторингом.`,
+    sections: [
+      {
+        title: "Общее общение",
+        facts: ["Приветствия", "Дизайн", "SEO", "Безопасность", "Кодинг"],
+        explanation:
+          "В обычном режиме AI работает как интеллектуальный ассистент без привязки к конкретному сайту.",
+        technical:
+          "Контекст: текущая сессия, общая экспертная логика и кодовая помощь.",
+        recommendations: [
+          "Сформулируйте задачу чётко — и я дам ответ в нужном формате.",
+        ],
+      },
+    ],
+  };
+}
+
+function buildSiteAnalysisReply(
+  question: string,
+  report: WebScanReport,
+  history: AiMessage[],
+): { text: string; sections: AiSection[] } {
+  const q = normalize(question);
+  const memory = buildConversationContext(history);
+  const issues = report.security?.securityIssues || [];
+  const scoreDescription =
+    report.scores?.overallRating >= 85
+      ? "сильный"
+      : report.scores?.overallRating >= 70
+        ? "средний"
+        : "требует улучшений";
+
+  const siteContext = buildSiteContextSummary(report);
+
+  const sections: AiSection[] = [];
 
   const addSection = (
     title: string,
     facts: string[],
     explanation: string,
     technical: string,
-    recommendations?: string[],
+    recommendations: string[] = [],
   ) => {
-    answers.push({
-      title,
-      facts,
-      explanation,
-      technical,
-      recommendations: recommendations || [],
-    });
+    sections.push({ title, facts, explanation, technical, recommendations });
   };
 
-  const r = report as WebScanReport;
-  const techList = [
-    ...(r.technologies?.frontend || []),
-    ...(r.technologies?.backend || []),
-    ...(r.technologies?.cssFramework || []),
-    ...(r.technologies?.jsLibraries || []),
-    ...(r.technologies?.cms || []),
-  ].filter(Boolean);
-  const techSlice =
-    techList.slice(0, 5).join(", ") ||
-    "не удалось определить по данным сканирования";
-  const issues = r.security?.securityIssues || [];
-
-  if (
-    q.includes("что это") ||
-    q.includes("что за сайт") ||
-    q.includes("для чего") ||
-    q.includes("назначение")
-  ) {
+  if (containsAny(q, ["технологи", "стек", "библиотек", "framework"])) {
     addSection(
-      "Что это за сайт",
+      "Технологии сайта",
       [
-        `Домен: ${r.id || "Не удалось определить"}`,
-        `Название: ${r.title || "Не удалось определить"}`,
-        `Описание: ${r.description || "Не удалось определить"}`,
-        `Язык: ${r.primaryLanguage || "Не удалось определить"}`,
-        `Страна: ${r.country || "Не удалось определить"}`,
+        `Frontend: ${(report.technologies?.frontend || []).join(", ") || "не подтвержден"}`,
+        `Backend: ${(report.technologies?.backend || []).join(", ") || "не подтвержден"}`,
+        `CSS framework: ${(report.technologies?.cssFramework || []).join(", ") || "не подтвержден"}`,
+        `JS libraries: ${(report.technologies?.jsLibraries || []).slice(0, 5).join(", ") || "не подтверждены"}`,
+        `CMS: ${(report.technologies?.cms || []).join(", ") || "не подтвержден"}`,
       ],
-      "Сайт был просканирован и его метаданные сохранены в отчёте. Ответ полностью строится только по данным этого отчёта.",
-      `В отчёте подтверждены технологии: ${techSlice}.`,
-      r.description
-        ? ["Рекомендуется уточнить meta description на уровне страниц."]
-        : ["В отчёте не удалось подтвердить meaningful description."],
+      "Технологический стек собирается только из данных сканирования текущего отчёта.",
+      `Подтверждённый стек: ${siteContext.split("\n")[0].replace("Технологии: ", "")}.`,
+      ["Сравните стек с современными безопасными версиями зависимостей."],
     );
   }
 
-  if (q.includes("безопасн") || q.includes("доверять") || q.includes("защит")) {
+  if (containsAny(q, ["цвет", "цвета", "дизайн", "шрифт", "font"])) {
     addSection(
-      "Безопасность",
-      [
-        `HTTPS: ${r.security?.httpsEnabled ? "Включён" : "Отключён"}`,
-        `SSL: ${r.security?.sslStatus || "Не удалось определить"}`,
-        `Издатель: ${r.security?.sslIssuer || "Не удалось определить"}`,
-        `Срок действия: ${r.security?.sslExpiry || "Не удалось определить"}`,
-        `Проблем: ${issues.length}`,
-      ],
-      r.security?.httpsEnabled
-        ? "По данным сканирования HTTPS включён. Это подтверждённый факт из отчёта."
-        : "По данным сканирования HTTPS не включён. Это подтверждённый факт из отчёта.",
-      `Заголовки безопасности: CSP=${r.security?.securityHeaders?.csp ? "✅" : "❌"}, HSTS=${r.security?.securityHeaders?.hsts ? "✅" : "❌"}, X-Frame-Options=${r.security?.securityHeaders?.xFrameOptions ? "✅" : "❌"}`,
-      issues.length
-        ? [
-            `По отчёту обнаружено ${issues.length} сигналов безопасности для исправления.`,
-          ]
-        : ["В отчёте не найдено явных проблем безопасности."],
-    );
-  }
-
-  if (
-    q.includes("технологи") ||
-    q.includes("написан") ||
-    q.includes("стек") ||
-    q.includes("библиотек")
-  ) {
-    addSection(
-      "Технологии",
-      [
-        `Frontend: ${(r.technologies?.frontend || []).join(", ") || "Не удалось определить"}`,
-        `Backend: ${(r.technologies?.backend || []).join(", ") || "Не удалось определить"}`,
-        `CSS: ${(r.technologies?.cssFramework || []).join(", ") || "Не удалось определить"}`,
-        `Библиотеки: ${(r.technologies?.jsLibraries || []).slice(0, 5).join(", ") || "Не удалось определить"}`,
-        `Языки: ${r.primaryLanguage || "Не удалось определить"}`,
-      ],
-      "Технологии в ответе берутся только из артефактов, найденных при сканировании сайта.",
-      `Подтвержденные технологии: ${techSlice}.`,
-      [
-        "Следует проверить устаревшие зависимости и поддерживаемые версии на стороне владельца сайта.",
-      ],
-    );
-  }
-
-  if (q.includes("цвет") || q.includes("шрифт") || q.includes("дизайн")) {
-    addSection(
-      "Дизайн",
+      "Дизайн и типографика",
       [
         `Цвета: ${
-          r.design?.colorPalette
-            ?.slice(0, 3)
-            .map((c) => c.hex)
-            .join(", ") || "Не удалось определить"
+          (report.design?.colorPalette || [])
+            .slice(0, 5)
+            .map((entry) => entry.hex)
+            .join(", ") || "не подтверждены"
         }`,
-        `Шрифты: ${(r.design?.fonts || []).slice(0, 3).join(", ") || "Не удалось определить"}`,
-        `Иконки: ${(r.design?.icons || []).slice(0, 3).join(", ") || "Не удалось определить"}`,
-        `Тема: ${r.design?.lightDarkTheme || "Не удалось определить"}`,
-        `Responsive: ${r.design?.responsiveness || "Не удалось определить"}`,
+        `Шрифты: ${(report.design?.fonts || []).slice(0, 5).join(", ") || "не подтверждены"}`,
+        `Тема: ${report.design?.lightDarkTheme || "не подтверждена"}`,
+        `Responsive: ${report.design?.responsiveness || "не подтвержден"}`,
       ],
-      "Цветовые сигналы, шрифты и поведение адаптивности извлечены непосредственно из HTML/CSS анализа страницы.",
-      `В отчёте найдено ${r.design?.colorPalette?.length || 0} цветов и ${(r.design?.fonts || []).length || 0} шрифтов.`,
-      [
-        "Если дизайн выглядит грубо, сначала проверьте систему токенов и размеры типографики.",
-      ],
+      "Цветовая палитра и набор шрифтов извлечены из HTML/CSS метаданных страницы.",
+      `На основе отчёта видно ${report.design?.colorPalette?.length || 0} цветовых сигнала и ${(report.design?.fonts || []).length || 0} шрифтов.`,
+      ["Проверьте согласованность токенов и типографики по всем страницам."],
     );
   }
 
   if (
-    q.includes("скорост") ||
-    q.includes("производительн") ||
-    q.includes("медленн") ||
-    q.includes("быст")
+    containsAny(q, [
+      "скорост",
+      "быст",
+      "медлен",
+      "производительн",
+      "почему сайт медленный",
+    ])
   ) {
     addSection(
       "Производительность",
       [
-        `Размер страницы: ${r.performance?.pageSizeKb || 0} KB`,
-        `Запросов: ${r.performance?.requestsCount || 0}`,
-        `Lighthouse Performance: ${r.performance?.lighthouseScore?.performance || 0}/100`,
+        `Размер страницы: ${report.performance?.pageSizeKb || 0} KB`,
+        `Запросов: ${report.performance?.requestsCount || 0}`,
+        `Lighthouse performance: ${report.performance?.lighthouseScore?.performance || 0}/100`,
+        `Core Web Vitals: LCP=${report.performance?.coreWebVitals?.lcpSec || 0}s; CLS=${report.performance?.coreWebVitals?.cls || 0}`,
       ],
-      r.performance?.lighthouseScore?.performance >= 80
-        ? "По данным оценки из отчёта производительность выглядит высокой."
-        : "По данным отчёта производительность требует улучшения.",
-      `Page size: ${r.performance?.pageSizeKb || 0}KB. Requests: ${r.performance?.requestsCount || 0}. Core Web Vitals: LCP=${r.performance?.coreWebVitals?.lcpSec || 0}s, CLS=${r.performance?.coreWebVitals?.cls || 0}.`,
+      report.performance?.lighthouseScore?.performance >= 80
+        ? "По данным отчёта производительность выглядит относительно сильной."
+        : "По данным отчёта есть заметные ограничения по размеру и объёму ресурсов.",
+      `Сайт сейчас оценивается как ${scoreDescription}. Основные маркеры: размер ${report.performance?.pageSizeKb || 0}KB, запросы ${report.performance?.requestsCount || 0}.`,
       [
-        "Оптимизируйте изображения и уменьшите размер страницы.",
-        "Используйте кэширование и CDN для статических ресурсов.",
+        "Оптимизируйте изображения и уменьшите количество запросов.",
+        "Проверьте раскладку и кэширование статических активов.",
       ],
     );
   }
 
-  if (q.includes("seo") || q.includes("поисков") || q.includes("ранжир")) {
+  if (containsAny(q, ["seo", "поисков", "ранжир", "улучшить seo"])) {
     addSection(
       "SEO",
       [
-        `Title: ${r.seo?.metaTitle || "Отсутствует"}`,
-        `Description: ${r.seo?.metaDescription || "Отсутствует"}`,
-        `Canonical: ${r.seo?.canonicalUrl || "Не указан"}`,
-        `Robots: ${r.seo?.robotsTxtStatus || "Не удалось определить"}`,
-        `Индексация: ${r.seo?.indexability || "Не удалось определить"}`,
+        `Title: ${report.seo?.metaTitle || "не найден"}`,
+        `Description: ${report.seo?.metaDescription || "не найден"}`,
+        `Canonical: ${report.seo?.canonicalUrl || "не найден"}`,
+        `Robots status: ${report.seo?.robotsTxtStatus || "не подтверждён"}`,
+        `Indexability: ${report.seo?.indexability || "не подтверждена"}`,
       ],
-      r.seo?.metaTitle && r.seo?.metaDescription
-        ? "В отчёте подтверждены title и description, поэтому SEO-метаданные частично присутствуют."
-        : "В отчёте не подтверждены ключевые SEO-поля, поэтому оценка требует улучшения.",
-      `Meta tags: title=${r.seo?.metaTitle ? "✅" : "❌"}, description=${r.seo?.metaDescription ? "✅" : "❌"}, canonical=${r.seo?.canonicalUrl ? "✅" : "❌"}`,
+      report.seo?.metaTitle && report.seo?.metaDescription
+        ? "SEO-маска выглядит частично заполненной, но это ещё не гарантия полной оптимизации."
+        : "В отчёте не подтверждены ключевые SEO-поля, поэтому продвижение может быть ограниченным.",
+      `SEO-поля: title=${report.seo?.metaTitle ? "✅" : "❌"}; description=${report.seo?.metaDescription ? "✅" : "❌"}; canonical=${report.seo?.canonicalUrl ? "✅" : "❌"}.`,
       [
-        "Добавьте title и description для всех значимых страниц.",
-        "Подключите canonical и структурированные данные.",
-        "Убедитесь, что sitemap.xml доступен для индексации.",
+        "Добавьте уникальные title/description на ключевых страницах.",
+        "Подключите canonical и structured data.",
       ],
     );
   }
 
   if (
-    q.includes("сервер") ||
-    q.includes("хостинг") ||
-    q.includes("где размещен") ||
-    q.includes("ip") ||
-    q.includes("страна")
+    containsAny(q, [
+      "безопас",
+      "ssl",
+      "https",
+      "защит",
+      "проблемы безопасности",
+    ])
   ) {
     addSection(
-      "Сервер и хостинг",
+      "Безопасность",
       [
-        `IP: ${r.server?.ipAddress || "Не удалось определить"}`,
-        `Сервер: ${r.server?.serverName || "Не удалось определить"}`,
-        `Хостинг: ${r.server?.hosting || "Не удалось определить"}`,
-        `Страна: ${r.server?.serverLocation || "Не удалось определить"}`,
+        `HTTPS enabled: ${report.security?.httpsEnabled ? "yes" : "no"}`,
+        `SSL status: ${report.security?.sslStatus || "не подтверждён"}`,
+        `Issuer: ${report.security?.sslIssuer || "не подтверждён"}`,
+        `Expiry: ${report.security?.sslExpiry || "не подтверждён"}`,
+        `Security issues: ${issues.length}`,
       ],
-      "Эти данные получены из публичных DNS/геолокационных сигналов и заголовков ответа сервера.",
-      `IP: ${r.server?.ipAddress}. Сервер: ${r.server?.serverName}. Провайдер: ${r.server?.hosting}.`,
-      [
-        "Если скорость из разных регионов низкая, рассмотрите CDN и более близкий edge-слой.",
-      ],
-    );
-  }
-
-  if (q.includes("dns") || q.includes("домен") || q.includes("регистрац")) {
-    addSection(
-      "DNS и домен",
-      [
-        `Домен: ${r.id || "Не удалось определить"}`,
-        `NS-серверы: ${(r.server?.dns || []).slice(0, 2).join(", ") || "Не удалось определить"}`,
-        `Возраст домена: ${r.domainAge || "Не удалось определить"}`,
-      ],
-      "DNS и доменные сигналы в этом ответе только из тех данных, которые смогли быть обнаружены на этапе сканирования.",
-      `DNS-серверы: ${(r.server?.dns || []).join(", ") || "Не удалось определить"}.`,
-      [
-        "Используйте надёжных DNS-провайдеров и, при необходимости, добавьте DNSSEC.",
-      ],
-    );
-  }
-
-  if (q.includes("ssl") || q.includes("https") || q.includes("шифрован")) {
-    addSection(
-      "SSL/HTTPS",
-      [
-        `Статус: ${r.security?.httpsEnabled ? "Включён" : "Отключён"}`,
-        `Издатель: ${r.security?.sslIssuer || "Не удалось определить"}`,
-        `Срок: ${r.security?.sslExpiry || "Не удалось определить"}`,
-      ],
-      getSslDescription(r.security?.httpsEnabled),
-      `SSL-сертификат: ${r.security?.sslIssuer}. Срок действия: ${r.security?.sslExpiry}.`,
-      ["Если срок приближается к истечению — обновите сертификат заранее."],
-    );
-  }
-
-  if (
-    q.includes("слаб") ||
-    q.includes("проблем") ||
-    q.includes("улучш") ||
-    q.includes("рекомендац")
-  ) {
-    addSection(
-      "Слабые места и рекомендации",
-      [
-        `Проблем безопасности: ${issues.length}`,
-        `SEO: ${r.seo?.metaTitle && r.seo?.metaDescription ? "✅" : "❌"}`,
-        `HTTPS: ${r.security?.httpsEnabled ? "✅" : "❌"}`,
-        `Responsive: ${r.design?.responsiveness?.includes("yes") ? "✅" : "❌"}`,
-      ],
-      "Рекомендации формируются исключительно из тех сигналов, которые уже были замечены в отчёте.",
-      `Безопасность: ${issues.length} замечаний, SEO: ${r.seo?.metaTitle && r.seo?.metaDescription ? "обнаружены мета-теги" : "неполные мета-теги"}.`,
+      getSslDescription(Boolean(report.security?.httpsEnabled)),
+      `CSP=${report.security?.securityHeaders?.csp ? "✅" : "❌"}; HSTS=${report.security?.securityHeaders?.hsts ? "✅" : "❌"}; X-Frame-Options=${report.security?.securityHeaders?.xFrameOptions ? "✅" : "❌"}.`,
       issues.length
         ? issues.slice(0, 3)
-        : ["Сайт выглядит достаточно здоровым по текущим признакам."],
+        : ["Поддерживайте действующий SSL и актуальные security headers."],
     );
   }
 
-  if (!answers.length) {
+  if (
+    containsAny(q, [
+      "что можно улучшить",
+      "улучшить",
+      "рекомендац",
+      "как исправить",
+    ])
+  ) {
     addSection(
-      "Нет подтверждённых данных",
+      "Приоритеты улучшений",
       [
-        "В отчёте не найдено достаточно фактов для корректного ответа на этот вопрос.",
+        `Общий рейтинг: ${report.scores?.overallRating || 0}/100`,
+        `Performance: ${report.performance?.lighthouseScore?.performance || 0}/100`,
+        `SEO: ${report.scores?.seoScore || 0}/100`,
+        `Accessibility: ${report.scores?.accessibilityScore || 0}/100`,
       ],
-      "Запрос не совпал с доступными полями в отчёте сканирования.",
-      "Для точного ответа задайте более конкретный вопрос по уже полученным данным.",
+      "Следующие рекомендации строятся только по данным текущего отчёта, без домыслов.",
+      `Самые заметные области: ${issues.length ? "безопасность" : "безопасность не критична"}; SEO=${report.seo?.metaTitle && report.seo?.metaDescription ? "частично подтвержден" : "требует внимания"}.`,
       [
-        "Снова выполните сканирование и уточните вопрос по конкретному полю отчёта.",
+        "Начните с SEO meta и безопасности.",
+        "Потом оптимизируйте фото, шрифты и число запросов.",
       ],
     );
   }
 
-  return answers;
+  if (!sections.length) {
+    return buildFallbackSiteAnswer(question);
+  }
+
+  const text = [
+    "## Анализ сайта по отчёту WebScope",
+    memory ? `> Контекст диалога: ${memory}` : "",
+    "",
+    "### Подтверждённые факты",
+    ...sections.map(
+      (section) => `- **${section.title}**: ${section.facts.join("; ")}`,
+    ),
+    "",
+    "### Рекомендация",
+    "Используйте этот ответ как основу для дальнейших действий, но всегда сверяйте его с фактическим состоянием сайта на реальном домене.",
+    "",
+    "### Контекст отчёта",
+    `\`\`\`text\n${siteContext}\n\`\`\``,
+  ].join("\n");
+
+  return { text, sections };
+}
+
+function buildFallbackSiteAnswer(question: string): {
+  text: string;
+  sections: AiSection[];
+} {
+  return {
+    text: `## Проблема с данными\n\nПо вашему вопросу «${question}» не хватает подтверждённых сигналов в текущем отчёте.\n\n### Что я могу сделать\n- уточнить вопрос по конкретному полю отчёта;\n- предложить безопасные шаги устранения;\n- объяснить, что именно не удалось подтвердить.`,
+    sections: [
+      {
+        title: "Недостаточно данных",
+        facts: ["В отчёте нет подтверждённых фактов по этому вопросу"],
+        explanation: "AI не должен ничего домысливать.",
+        technical: "Статус: честный fallback на основании доступных данных.",
+        recommendations: [
+          "Задайте более точный вопрос или выполните повторное сканирование сайта.",
+        ],
+      },
+    ],
+  };
 }
 
 export async function sendAiQuestion(
   question: string,
   report: WebScanReport | Record<string, unknown>,
+  history: AiMessage[] = [],
 ): Promise<{ text: string; sections: AiSection[] }> {
   const hasReport = Boolean(
     report &&
@@ -300,40 +520,34 @@ export async function sendAiQuestion(
     "security" in report,
   );
 
-  if (!hasReport) {
-    return {
-      text: "Для точного ответа AI нужен уже выполненный отчёт по сайту. Сначала просканируйте домен на главной странице, а затем задавайте вопросы только по полученным данным.",
-      sections: [
-        {
-          title: "Нет данных для анализа",
-          facts: [
-            "Сканирование ещё не выполнено",
-            "Источником ответа должен быть отчёт сайта",
-            "Вопросы без отчёта считаются неподтверждёнными",
-          ],
-          explanation: "WebScope отвечает только по фактам из текущего отчёта.",
-          technical:
-            "Без реального CSV/JSON-отчёта AI не должен придумывать выводы.",
-          recommendations: [
-            "Выполните сканирование сайта и вернитесь с конкретным вопросом.",
-          ],
-        },
-      ],
-    };
-  }
+  if (hasReport) {
+    const reportData = report as WebScanReport;
+    const q = normalize(question);
 
-  const sections = answerQuestion(question, report);
+    const isSiteQuestion = containsAny(q, [
+      "технолог",
+      "цвет",
+      "шрифт",
+      "скорост",
+      "seo",
+      "безопас",
+      "ssl",
+      "hostname",
+      "сайт",
+      "дизайн",
+      "frontend",
+      "backend",
+      "библиотек",
+      "проблем",
+      "улучш",
+    ]);
 
-  let text = "";
-  for (const section of sections) {
-    text += `\n\n**${section.title}:**\n`;
-    text += `Факты: ${section.facts.join("; ")}\n`;
-    text += `Объяснение: ${section.explanation}\n`;
-    text += `Технически: ${section.technical}\n`;
-    if (section.recommendations?.length) {
-      text += `Рекомендации: ${section.recommendations.join("; ")}\n`;
+    if (isSiteQuestion) {
+      return buildSiteAnalysisReply(question, reportData, history);
     }
+
+    return buildSiteAnalysisReply(question, reportData, history);
   }
 
-  return { text, sections };
+  return buildGeneralAssistantReply(question, history);
 }
