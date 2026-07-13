@@ -21,7 +21,7 @@ const fadeUp = {
 };
 
 export const Compare: React.FC = () => {
-  const { compareReports, setCompareSlot, clearCompareSlots, history } =
+  const { compareReports, setCompareSlot, clearCompareSlots, history, scanUrl } =
     useApp();
   const [showSelectorModal, setShowSelectorModal] = useState<0 | 1 | null>(
     null,
@@ -31,20 +31,18 @@ export const Compare: React.FC = () => {
   const report2 = compareReports[1];
 
   const handleSelectSlot = async (slotIndex: 0 | 1, url: string) => {
-    import("../services/apiService").then(async (mod) => {
-      try {
-        const report = await mod.scanUrl(url);
-        setCompareSlot(slotIndex, report);
+    try {
+      const report = await scanUrl(url);
+      setCompareSlot(slotIndex, report);
+      setShowSelectorModal(null);
+    } catch {
+      // If scan fails, try using history item data
+      const historyItem = history.find(h => h.url.includes(url));
+      if (historyItem) {
+        setCompareSlot(slotIndex, null);
         setShowSelectorModal(null);
-      } catch {
-        // If scan fails, try using history item data
-        const historyItem = history.find(h => h.url.includes(url));
-        if (historyItem) {
-          setCompareSlot(slotIndex, null);
-          setShowSelectorModal(null);
-        }
       }
-    });
+    }
   };
 
   const handleRemoveSlot = (slotIndex: 0 | 1) =>

@@ -69,20 +69,18 @@ export const History: React.FC = () => {
     navigate("/analysis");
   };
 
-  const handleCompare = (item: any) => {
-    import("../services/apiService").then(async (mod) => {
-      try {
-        const report = await mod.scanUrl(item.url);
-        if (!compareReports[0]) {
-          setCompareSlot(0, report);
-        } else {
-          setCompareSlot(1, report);
-          navigate("/compare");
-        }
-      } catch {
-        // Scan failed silently
+  const handleCompare = async (item: any) => {
+    try {
+      const report = await scanUrl(item.url);
+      if (!compareReports[0]) {
+        setCompareSlot(0, report);
+      } else {
+        setCompareSlot(1, report);
+        navigate("/compare");
       }
-    });
+    } catch {
+      // Scan failed silently
+    }
   };
 
   return (

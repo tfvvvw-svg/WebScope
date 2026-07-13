@@ -1,7 +1,7 @@
 export interface CoreWebVitals {
   lcpSec: number; // Largest Contentful Paint (seconds)
-  fidMs: number;  // First Input Delay (milliseconds)
-  cls: number;     // Cumulative Layout Shift (0 to 1)
+  fidMs: number; // First Input Delay (milliseconds)
+  cls: number; // Cumulative Layout Shift (0 to 1)
 }
 
 export interface LighthouseScore {
@@ -51,12 +51,20 @@ export interface TechnologyStack {
   cms: string[];
   databases: string[];
   cssFramework: string[];
+  cssTech?: string[];
+  bundler?: string[];
   uiLibrary: string[];
   jsLibraries: string[];
   fonts: string[];
   icons: string[];
   analytics: string[];
   cdn: string[];
+  animations?: string[];
+  cloud?: string[];
+  deployment?: string[];
+  packageManager?: string[];
+  monitoring?: string[];
+  payments?: string[];
 }
 
 export interface ServerInfo {
@@ -106,17 +114,36 @@ export interface SeoAudit {
 
 export interface DesignColor {
   hex: string;
-  role: string; // e.g., 'Primary', 'Secondary', 'Accent', 'Background'
+  role: string;
+  rgb?: string;
+  hsl?: string;
   tailwindName?: string;
+  usage?: number;
+}
+
+export interface FontMetric {
+  family: string;
+  size: string;
+  weight: string;
+  lineHeight: string;
+  letterSpacing: string;
+  source: string;
+}
+
+export interface CssVariable {
+  name: string;
+  value: string;
 }
 
 export interface DesignAudit {
   colorPalette: DesignColor[];
   fonts: string[];
+  fontMetrics?: FontMetric[];
   icons: string[];
-  lightDarkTheme: string; // e.g. 'Both (Auto)', 'Dark Only', 'Light Only'
-  responsiveness: string; // e.g. 'Fully Responsive', 'Mobile Friendly', 'Desktop Only'
-  designStyle: string;     // e.g. 'Glassmorphism Minimalist', 'Neobrutalism', 'Classic Corporate'
+  cssVariables?: CssVariable[];
+  lightDarkTheme: string;
+  responsiveness: string;
+  designStyle: string;
 }
 
 export interface SiteCapabilities {
@@ -154,7 +181,7 @@ export interface WebScanReport {
   id: string;
   url: string;
   scanDate: string;
-  
+
   // 🌐 Primary Info
   title: string;
   description: string;

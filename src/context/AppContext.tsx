@@ -44,7 +44,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   // Compute favorites list from history
   const favorites = history.filter((item) => item.isFavorite);
 
-  // Scan a website URL using the real backend API
+  // Scan a website URL entirely in the browser (no backend required)
   const scanUrl = async (url: string): Promise<WebScanReport> => {
     setLoading(true);
     setScanProgress(10);
@@ -63,7 +63,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     }, 300);
 
     try {
-      // Call the real backend API
+      // Run the browser-based scanner
       const report = await apiScanUrl(url);
 
       clearInterval(interval);

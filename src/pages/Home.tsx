@@ -22,6 +22,19 @@ import {
 import { motion, AnimatePresence } from "framer-motion";
 import { useLanguage } from "../context/LanguageContext";
 
+const SCAN_STEPS = [
+  "Connecting to remote socket...",
+  "Performing DNS lookup & IP registration...",
+  "Fetching HTTP response headers...",
+  "Parsing DOM content & SEO meta tags...",
+  "Detecting JS frameworks & libraries...",
+  "Analyzing security configurations (SSL & CSP)...",
+  "Extracting color system & font-families...",
+  "Generating performance audit (Lighthouse metrics)...",
+  "Invoking AI analysis engine...",
+  "Finalizing diagnostic report...",
+];
+
 const fadeUp = {
   initial: { opacity: 0, y: 30 },
   whileInView: { opacity: 1, y: 0 },
@@ -42,27 +55,15 @@ export const Home: React.FC = () => {
   const navigate = useNavigate();
 
   const [scanStep, setScanStep] = useState("");
-  const steps = [
-    "Connecting to remote socket...",
-    "Performing DNS lookup & IP registration...",
-    "Fetching HTTP response headers...",
-    "Parsing DOM content & SEO meta tags...",
-    "Detecting JS frameworks & libraries...",
-    "Analyzing security configurations (SSL & CSP)...",
-    "Extracting color system & font-families...",
-    "Generating performance audit (Lighthouse metrics)...",
-    "Invoking AI analysis engine...",
-    "Finalizing diagnostic report...",
-  ];
 
   useEffect(() => {
     if (!loading) return;
     const stepInterval = setInterval(() => {
       const stepIndex = Math.min(
-        Math.floor((scanProgress / 100) * steps.length),
-        steps.length - 1,
+        Math.floor((scanProgress / 100) * SCAN_STEPS.length),
+        SCAN_STEPS.length - 1,
       );
-      setScanStep(steps[stepIndex]);
+      setScanStep(SCAN_STEPS[stepIndex]);
     }, 150);
     return () => clearInterval(stepInterval);
   }, [loading, scanProgress]);

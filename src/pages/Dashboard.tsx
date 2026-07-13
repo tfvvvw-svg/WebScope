@@ -62,34 +62,18 @@ export const Dashboard: React.FC = () => {
     totalScans > 0 ? Math.max(...history.map((h) => h.overallRating)) : 0;
 
   const handleCompareSelect = async (item: any) => {
-    if (!compareReports[0]) {
-      import("../services/apiService").then(async (mod) => {
-        try {
-          const report = await mod.scanUrl(item.url);
-          setCompareSlot(0, report);
-        } catch {
-          // Fallback if scan fails
-        }
-      });
-    } else if (!compareReports[1]) {
-      import("../services/apiService").then(async (mod) => {
-        try {
-          const report = await mod.scanUrl(item.url);
-          setCompareSlot(1, report);
-          navigate("/compare");
-        } catch {
-          // Fallback if scan fails
-        }
-      });
-    } else {
-      import("../services/apiService").then(async (mod) => {
-        try {
-          const report = await mod.scanUrl(item.url);
-          setCompareSlot(0, report);
-        } catch {
-          // Fallback if scan fails
-        }
-      });
+    try {
+      const report = await scanUrl(item.url);
+      if (!compareReports[0]) {
+        setCompareSlot(0, report);
+      } else if (!compareReports[1]) {
+        setCompareSlot(1, report);
+        navigate("/compare");
+      } else {
+        setCompareSlot(0, report);
+      }
+    } catch {
+      // Fallback if scan fails
     }
   };
 
