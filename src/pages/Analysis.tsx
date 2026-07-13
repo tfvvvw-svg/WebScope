@@ -6,7 +6,6 @@ import { Button } from '../components/ui/Button';
 import { Badge } from '../components/ui/Badge';
 import { Input } from '../components/ui/Input';
 import { GaugeChart } from '../components/charts/GaugeChart';
-import { ScoreBar } from '../components/charts/ScoreBar';
 import { useNavigate } from 'react-router-dom';
 import {
   Globe,
@@ -27,7 +26,7 @@ import {
 import { getDomainName } from '../services/scanner';
 import { useLanguage } from '../context/LanguageContext';
 import { sendAiQuestion } from '../services/aiService';
-import type { AiMessage, AiSection } from '../services/aiService';
+import type { AiMessage } from '../services/aiService';
 
 // (animations configured inline)
 

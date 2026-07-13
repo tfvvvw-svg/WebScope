@@ -1,5 +1,5 @@
 import axios from 'axios';
-import type { WebScanReport, HistoryItem } from '../types/scan';
+import type { WebScanReport } from '../types/scan';
 
 const API_BASE = '/api';
 

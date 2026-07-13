@@ -6,7 +6,7 @@ import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
 import { Badge } from '../components/ui/Badge';
 import { sendAiQuestion } from '../services/aiService';
-import type { AiMessage, AiSection } from '../services/aiService';
+import type { AiMessage } from '../services/aiService';
 import { Sparkles, Search, Trash2, Copy, Check } from 'lucide-react';
 import { getDomainName } from '../services/scanner';
 
