@@ -1,18 +1,17 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import type { ReactNode } from "react";
 
-// Theme definition
-type Theme = "light" | "dark";
+// Theme definition - Dark theme only
+type Theme = "dark";
 
 interface ThemeContextProps {
   theme: Theme;
-  toggleTheme: () => void;
 }
 
 const ThemeContext = createContext<ThemeContextProps | undefined>(undefined);
 
 export const ThemeProvider = ({ children }: { children: ReactNode }) => {
-  const [theme, setTheme] = useState<Theme>(() => {
+  const [theme] = useState<Theme>(() => {
     const saved = localStorage.getItem("app-theme");
     return (saved as Theme) || "dark";
   });
@@ -20,16 +19,12 @@ export const ThemeProvider = ({ children }: { children: ReactNode }) => {
   // Apply theme class to html element
   useEffect(() => {
     const root = document.documentElement;
-    root.dataset.theme = theme;
-    localStorage.setItem("app-theme", theme);
-  }, [theme]);
-
-  const toggleTheme = () => {
-    setTheme((prev) => (prev === "dark" ? "light" : "dark"));
-  };
+    root.dataset.theme = "dark";
+    localStorage.setItem("app-theme", "dark");
+  }, []);
 
   return (
-    <ThemeContext.Provider value={{ theme, toggleTheme }}>
+    <ThemeContext.Provider value={{ theme }}>
       {children}
     </ThemeContext.Provider>
   );
@@ -41,4 +36,9 @@ export const useTheme = (): ThemeContextProps => {
     throw new Error("useTheme must be used within ThemeProvider");
   }
   return context;
+};
+
+// Helper hook to check if dark mode (always true in this implementation)
+export const useIsDarkMode = (): boolean => {
+  return true;
 };

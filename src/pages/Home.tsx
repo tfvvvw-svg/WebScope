@@ -26,30 +26,30 @@ const DEMOS = ["vercel.com", "stripe.com", "github.com", "notion.so"];
 
 const FAQS = [
   {
-    q: "Как работает сканер?",
-    a: "Сканер загружает сайт через CORS-прокси, парсит HTML, извлекает мета-теги, технологии, цвета, шрифты и анализирует безопасность.",
+    qKey: "faq1Question",
+    aKey: "faq1Answer",
   },
   {
-    q: "Безопасно ли использовать?",
-    a: "Да, все данные хранятся локально в вашем браузере. Мы не отправляем данные на сторонние серверы.",
+    qKey: "faq2Question",
+    aKey: "faq2Answer",
   },
   {
-    q: "Какие технологии определяются?",
-    a: "Более 120 технологий: React, Vue, Angular, Next.js, Tailwind CSS, WordPress, Shopify, Cloudflare и многие другие.",
+    qKey: "faq3Question",
+    aKey: "faq3Answer",
   },
 ];
 
 const SCAN_STEPS = [
-  "Connecting to remote socket...",
-  "Performing DNS lookup & IP registration...",
-  "Fetching HTTP response headers...",
-  "Parsing DOM content & SEO meta tags...",
-  "Detecting JS frameworks & libraries...",
-  "Analyzing security configurations (SSL & CSP)...",
-  "Extracting color system & font-families...",
-  "Generating performance audit (Lighthouse metrics)...",
-  "Invoking AI analysis engine...",
-  "Finalizing diagnostic report...",
+  "scanStep1",
+  "scanStep2",
+  "scanStep3",
+  "scanStep4",
+  "scanStep5",
+  "scanStep6",
+  "scanStep7",
+  "scanStep8",
+  "scanStep9",
+  "scanStep10",
 ];
 
 const fadeUp = {
@@ -88,24 +88,23 @@ export const Home: React.FC = () => {
   const handleScan = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
     if (!url.trim()) {
-      setError("Пожалуйста, введите URL сайта");
+      setError(t("enterUrl"));
       return;
     }
     const urlPattern = /^(https?:\/\/)?([a-z0-9.-]+\.[a-z]{2,})(\/\S*)?$/i;
     if (!urlPattern.test(url.trim())) {
-      setError(
-        "Неверный формат URL (например, vercel.com или https://google.com)",
-      );
+      setError(t("invalidUrl"));
       return;
     }
     setError("");
     try {
       await scanUrl(url);
       navigate("/dashboard");
-    } catch {
-      setError("Не удалось просканировать сайт. Попробуйте снова.");
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : t("scanFailed");
+      setError(msg);
     }
-  }, [url, scanUrl, navigate]);
+  }, [url, scanUrl, navigate, t]);
 
   const demos = DEMOS;
 
@@ -115,47 +114,47 @@ export const Home: React.FC = () => {
   const features = useMemo(() => ([
     {
       icon: <Cpu className="w-6 h-6" />,
-      title: "Анализ технологического стека",
-      desc: "Определяйте фреймворки фронтенда, серверные движки, CSS-фреймворки, CDN-сети, шрифты, иконки и аналитические трекеры в один клик.",
+      titleKey: "techTitle",
+      descKey: "techDesc",
       color: "from-fuchsia-500 to-purple-500",
       glow: "shadow-fuchsia-500/40",
     },
     {
       icon: <Zap className="w-6 h-6" />,
-      title: "Core Web Vitals и скорость",
-      desc: "Мгновенные оценки Lighthouse: LCP, FID, CLS, SEO, доступность и best-practices. Реальные показатели производительности.",
+      titleKey: "perfTitle",
+      descKey: "perfDesc",
       color: "from-cyan-500 to-blue-500",
       glow: "shadow-cyan-500/40",
     },
     {
       icon: <Server className="w-6 h-6" />,
-      title: "Сервер и геолокация",
-      desc: "Реальные хостинг-провайдеры, A-записи, IP-адреса, NS-серверы, статусы SSL и физическое расположение серверов.",
+      titleKey: "serverTitle",
+      descKey: "serverDesc",
       color: "from-amber-500 to-orange-500",
       glow: "shadow-amber-500/40",
     },
     {
       icon: <ShieldCheck className="w-6 h-6" />,
-      title: "Аудит безопасности",
-      desc: "Проверка HTTPS, SSL-сертификатов, заголовков CSP, HSTS, X-Frame-Options, политик cookies и других уязвимостей.",
+      titleKey: "securityAudit",
+      descKey: "securityDesc",
       color: "from-emerald-500 to-teal-500",
       glow: "shadow-emerald-500/40",
     },
     {
       icon: <Palette className="w-6 h-6" />,
-      title: "Дизайн-палитра",
-      desc: "Извлечение цветовой системы сайта, шрифтов, иконок, обнаружение тёмной/светлой темы и определение стиля дизайна.",
+      titleKey: "designPalette",
+      descKey: "designDesc",
       color: "from-pink-500 to-rose-500",
       glow: "shadow-pink-500/40",
     },
     {
       icon: <Brain className="w-6 h-6" />,
-      title: "AI-движок анализа",
-      desc: "Машинное обучение генерирует конкретные рекомендации: сильные стороны, слабые места, советы по оптимизации.",
+      titleKey: "aiEngine",
+      descKey: "aiEngineDesc",
       color: "from-violet-500 to-fuchsia-500",
       glow: "shadow-violet-500/40",
     },
-  ]), []);
+  ]), [t]);
 
   return (
     <div className="relative w-full">
@@ -195,12 +194,12 @@ export const Home: React.FC = () => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.7, delay: 0.1 }}
         >
-          <span className="text-white">Раскройте </span>
-          <span className="animate-gradient-text">структурную ДНК</span>
+          <span className="text-white">{t("heroTitle").split(' ')[0]} </span>
+          <span className="animate-gradient-text">{t("heroTitle").split(' ').slice(1, 3).join(' ')}</span>
           <br />
-          <span className="text-white">любого </span>
+          <span className="text-white">{t("heroTitle").split(' ')[3]} </span>
           <span className="relative inline-block">
-            <span className="animate-gradient-text">веб-сайта</span>
+            <span className="animate-gradient-text">{t("heroTitle").split(' ').slice(4).join(' ')}</span>
             <motion.span
               className="absolute -bottom-2 left-0 right-0 h-1 bg-gradient-to-r from-fuchsia-500 via-cyan-500 to-pink-500 rounded-full"
               initial={{ scaleX: 0 }}
@@ -347,19 +346,19 @@ export const Home: React.FC = () => {
           transition={{ duration: 0.6, delay: 0.5 }}
         >
           {[
-            { icon: <Zap className="w-3 h-3" />, label: "Аудит за 2 сек" },
+            { icon: <Zap className="w-3 h-3" />, labelKey: "auditIn2Sec" },
             {
               icon: <ShieldCheck className="w-3 h-3" />,
-              label: "Без регистрации",
+              labelKey: "noRegistration",
             },
-            { icon: <Sparkles className="w-3 h-3" />, label: "AI-powered" },
+            { icon: <Sparkles className="w-3 h-3" />, labelKey: "aiPowered" },
           ].map((item, i) => (
             <span
               key={i}
               className="flex items-center gap-1.5 text-fuchsia-300/70"
             >
               {item.icon}
-              {item.label}
+              {t(item.labelKey)}
             </span>
           ))}
         </motion.div>
@@ -369,13 +368,13 @@ export const Home: React.FC = () => {
       <section className="relative z-10 max-w-7xl mx-auto px-6 py-8">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {[
-            { v: "50K+", l: "Аудитов проведено" },
-            { v: "99.9%", l: "Uptime сканера" },
-            { v: "120+", l: "Технологий в базе" },
-            { v: "< 2s", l: "Время ответа" },
+            { v: "50K+", labelKey: "auditsConducted" },
+            { v: "99.9%", labelKey: "scannerUptime" },
+            { v: "120+", labelKey: "techInDatabase" },
+            { v: "< 2s", labelKey: "responseTime" },
           ].map((s, i) => (
             <motion.div
-              key={s.l}
+              key={s.labelKey}
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
@@ -386,7 +385,7 @@ export const Home: React.FC = () => {
                 {s.v}
               </div>
               <div className="text-[10px] uppercase tracking-widest text-zinc-400 mt-1.5 font-semibold">
-                {s.l}
+                {t(s.labelKey)}
               </div>
             </motion.div>
           ))}
@@ -397,24 +396,20 @@ export const Home: React.FC = () => {
       <section className="relative z-10 max-w-7xl mx-auto px-6 py-20">
         <motion.div {...fadeUp} className="text-center mb-14">
           <Badge variant="info" size="md" className="mb-4 mx-auto">
-            ⚡ Полный спектр диагностики
+            ⚡ {t("fullSpectrumDiagnostics")}
           </Badge>
           <h2 className="text-3xl sm:text-4xl font-extrabold text-white tracking-tight">
-            Всё, что нужно для{" "}
+            {t("everythingYouNeed").split(' ').slice(0, 3).join(' ')}{" "}
             <span className="animate-gradient-text">
-              аудита веб-инфраструктуры
+              {t("everythingYouNeed").split(' ').slice(3).join(' ')}
             </span>
           </h2>
-          <p className="text-sm text-zinc-400 mt-3 max-w-2xl mx-auto">
-            Анализируйте производительность, дизайн-системы, безопасность и
-            архитектуру вашего сайта в одном мощном отчёте
-          </p>
         </motion.div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
           {features.map((feature, i) => (
             <motion.div
-              key={feature.title}
+              key={feature.titleKey}
               {...stagger(i * 0.1)}
               whileHover={{ y: -8 }}
               className="group relative"
@@ -429,10 +424,10 @@ export const Home: React.FC = () => {
                 </div>
 
                 <h3 className="text-base font-bold text-white group-hover:text-fuchsia-300 transition-colors">
-                  {feature.title}
+                  {t(feature.titleKey)}
                 </h3>
                 <p className="text-xs text-zinc-400 leading-relaxed flex-1">
-                  {feature.desc}
+                  {t(feature.descKey)}
                 </p>
 
                 <div className="flex items-center gap-1.5 text-[11px] text-fuchsia-300/70 font-semibold uppercase tracking-widest pt-2 group-hover:text-cyan-300 transition-colors">
@@ -454,11 +449,11 @@ export const Home: React.FC = () => {
       <section className="relative z-10 max-w-7xl mx-auto px-6 py-20">
         <motion.div {...fadeUp} className="text-center mb-14">
           <Badge variant="purple" size="md" className="mb-4 mx-auto">
-            🚀 Процесс
+            🚀 {t("howItWorks")}
           </Badge>
           <h2 className="text-3xl sm:text-4xl font-extrabold text-white tracking-tight">
-            Аудит за{" "}
-            <span className="animate-gradient-text">3 простых шага</span>
+            {t("stepsTitle")}{" "}
+            <span className="animate-gradient-text">{t("stepsSubtitle")}</span>
           </h2>
         </motion.div>
 
@@ -466,20 +461,20 @@ export const Home: React.FC = () => {
           {[
             {
               n: "01",
-              t: "Введите домен",
-              d: "Укажите URL любого публичного сайта. Поддерживаются поддомены и нестандартные порты.",
+              titleKey: "step1Title",
+              descKey: "step1Desc",
               icon: <Globe />,
             },
             {
               n: "02",
-              t: "AI-аудит",
-              d: "Наш движок анализирует более 120 параметров: стек, дизайн, скорость, безопасность.",
+              titleKey: "step2Title",
+              descKey: "step2Desc",
               icon: <Brain />,
             },
             {
               n: "03",
-              t: "Готовый отчёт",
-              d: "Получите детальный PDF-ready отчёт с рекомендациями по оптимизации.",
+              titleKey: "step3Title",
+              descKey: "step3Desc",
               icon: <Rocket />,
             },
           ].map((step, i) => (
@@ -495,9 +490,9 @@ export const Home: React.FC = () => {
                 <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-fuchsia-500 to-cyan-500 flex items-center justify-center text-white mb-4 shadow-lg shadow-fuchsia-500/30">
                   {step.icon}
                 </div>
-                <h3 className="text-lg font-bold text-white mb-2">{step.t}</h3>
+                <h3 className="text-lg font-bold text-white mb-2">{t(step.titleKey)}</h3>
                 <p className="text-xs text-zinc-400 leading-relaxed">
-                  {step.d}
+                  {t(step.descKey)}
                 </p>
               </div>
               {i < 2 && (
@@ -512,13 +507,13 @@ export const Home: React.FC = () => {
       <section className="relative z-10 max-w-7xl mx-auto px-6 py-20">
         <motion.div {...fadeUp} className="text-center mb-14">
           <Badge variant="purple" size="md" className="mb-4 mx-auto">
-            💎 Тарифы
+            💎 {t("pricingTitle")}
           </Badge>
           <h2 className="text-3xl sm:text-4xl font-extrabold text-white tracking-tight">
-            Выберите <span className="animate-gradient-text">свой план</span>
+            {t("pricingTitle")} <span className="animate-gradient-text">{t("pricingSubtitle")}</span>
           </h2>
           <p className="text-sm text-zinc-400 mt-3">
-            От бесплатного аудита до корпоративных SaaS-решений
+            {t("pricingDesc")}
           </p>
         </motion.div>
 
@@ -530,21 +525,21 @@ export const Home: React.FC = () => {
             className="glass-card p-7 flex flex-col"
           >
             <h4 className="text-sm font-bold text-fuchsia-300 uppercase tracking-widest">
-              Starter
+              {t("starter")}
             </h4>
             <div className="mt-4 flex items-baseline text-white">
               <span className="text-4xl font-extrabold tracking-tight">$0</span>
-              <span className="ml-1 text-xs text-zinc-400">/ навсегда</span>
+              <span className="ml-1 text-xs text-zinc-400">{t("forever")}</span>
             </div>
             <p className="mt-2 text-xs text-zinc-400">
-              Идеально для личных проектов и обучения
+              {t("forPersonalProjects")}
             </p>
             <ul className="mt-6 flex flex-col gap-3 text-xs text-zinc-300 flex-1">
               {[
-                "5 сканирований в день",
-                "Базовая оценка стека",
-                "История до 10 записей",
-                "Базовый дизайн-аудит",
+                t("fiveScansPerDay"),
+                t("basicStackAssessment"),
+                t("historyUpTo10"),
+                t("basicDesignAudit"),
               ].map((f) => (
                 <li key={f} className="flex items-center gap-2">
                   <CheckCircle className="w-4 h-4 text-fuchsia-400 flex-shrink-0" />{" "}
@@ -553,7 +548,7 @@ export const Home: React.FC = () => {
               ))}
             </ul>
             <Button variant="outline" className="mt-8 w-full">
-              Начать бесплатно
+              {t("startFree")}
             </Button>
           </motion.div>
 
@@ -567,28 +562,28 @@ export const Home: React.FC = () => {
             <div className="relative glass-card p-7 flex flex-col border-fuchsia-400/50 shadow-2xl shadow-fuchsia-500/30">
               <div className="absolute -top-3 right-6">
                 <Badge variant="purple" glow className="text-[10px]">
-                  ⚡ Популярный
+                  ⚡ {t("popular")}
                 </Badge>
               </div>
               <h4 className="text-sm font-bold text-cyan-300 uppercase tracking-widest">
-                Pro
+                {t("pro")}
               </h4>
               <div className="mt-4 flex items-baseline text-white">
                 <span className="text-4xl font-extrabold tracking-tight animate-gradient-text">
                   $29
                 </span>
-                <span className="ml-1 text-xs text-zinc-400">/ месяц</span>
+                <span className="ml-1 text-xs text-zinc-400">{t("perMonth")}</span>
               </div>
               <p className="mt-2 text-xs text-zinc-400">
-                Для QA-команд, дизайнеров и SEO-специалистов
+                {t("forQATeams")}
               </p>
               <ul className="mt-6 flex flex-col gap-3 text-xs text-zinc-200 flex-1">
                 {[
-                  "Безлимитные сканирования",
-                  "Полные графики сравнения",
-                  "Детальные дизайн-палитры",
-                  "PDF-экспорт отчётов",
-                  "Приоритетная поддержка",
+                  t("unlimitedScans"),
+                  t("fullComparisonCharts"),
+                  t("detailedDesignPalettes"),
+                  t("pdfExport"),
+                  t("prioritySupport"),
                 ].map((f) => (
                   <li key={f} className="flex items-center gap-2">
                     <CheckCircle className="w-4 h-4 text-cyan-400 flex-shrink-0" />{" "}
@@ -600,7 +595,7 @@ export const Home: React.FC = () => {
                 variant="primary"
                 className="mt-8 w-full shadow-fuchsia-500/40"
               >
-                Upgrade to Pro
+                {t("upgradePro")}
               </Button>
             </div>
           </motion.div>
@@ -612,24 +607,24 @@ export const Home: React.FC = () => {
             className="glass-card p-7 flex flex-col"
           >
             <h4 className="text-sm font-bold text-pink-300 uppercase tracking-widest">
-              Enterprise
+              {t("enterprise")}
             </h4>
             <div className="mt-4 flex items-baseline text-white">
               <span className="text-4xl font-extrabold tracking-tight">
                 $99
               </span>
-              <span className="ml-1 text-xs text-zinc-400">/ месяц</span>
+              <span className="ml-1 text-xs text-zinc-400">{t("perMonth")}</span>
             </div>
             <p className="mt-2 text-xs text-zinc-400">
-              Для агентств и веб-студий
+              {t("forAgencies")}
             </p>
             <ul className="mt-6 flex flex-col gap-3 text-xs text-zinc-300 flex-1">
               {[
-                "High-frequency crawler API",
-                "Webhook-интеграции",
-                "Командные workspace-ы",
-                "SLA-поддержка 24/7",
-                "Кастомные отчёты",
+                t("highFrequencyCrawler"),
+                t("webhookIntegrations"),
+                t("teamWorkspaces"),
+                t("support247"),
+                t("customReports"),
               ].map((f) => (
                 <li key={f} className="flex items-center gap-2">
                   <CheckCircle className="w-4 h-4 text-pink-400 flex-shrink-0" />{" "}
@@ -638,7 +633,7 @@ export const Home: React.FC = () => {
               ))}
             </ul>
             <Button variant="outline" className="mt-8 w-full">
-              Contact Sales
+              {t("contactSales")}
             </Button>
           </motion.div>
         </div>
@@ -651,10 +646,10 @@ export const Home: React.FC = () => {
             <HelpCircle className="w-6 h-6 text-white" />
           </div>
           <h2 className="text-3xl font-extrabold text-white mt-4">
-            Часто задаваемые вопросы
+            {t("faqTitle")}
           </h2>
           <p className="text-sm text-zinc-400 mt-2">
-            Ответы о нашей архитектуре сканирования
+            {t("faqSubtitle")}
           </p>
         </motion.div>
 
@@ -676,7 +671,7 @@ export const Home: React.FC = () => {
                   className="w-full px-6 py-4 flex items-center justify-between text-left font-semibold text-sm text-zinc-100 hover:text-white cursor-pointer group"
                 >
                   <span className="group-hover:text-fuchsia-300 transition-colors">
-                    {faq.q}
+                    {t(faq.qKey)}
                   </span>
                   <motion.span
                     animate={{ rotate: open ? 45 : 0 }}
@@ -696,7 +691,7 @@ export const Home: React.FC = () => {
                       className="overflow-hidden"
                     >
                       <p className="px-6 pb-5 text-xs text-zinc-300 leading-relaxed">
-                        {faq.a}
+                        {t(faq.aKey)}
                       </p>
                     </motion.div>
                   )}
@@ -723,13 +718,11 @@ export const Home: React.FC = () => {
           <div className="relative z-10">
             <Sparkles className="w-10 h-10 text-fuchsia-400 mx-auto mb-4 animate-pulse" />
             <h2 className="text-3xl sm:text-4xl font-extrabold text-white mb-4">
-              Готовы увидеть{" "}
-              <span className="animate-gradient-text">скрытую ДНК</span> вашего
-              сайта?
+              {t("readyToSee")}{" "}
+              <span className="animate-gradient-text">{t("hiddenDna")}</span> {t("ofYourSite")}
             </h2>
             <p className="text-sm text-zinc-300 max-w-xl mx-auto mb-7">
-              Запустите бесплатный аудит прямо сейчас — без регистрации, без
-              email, мгновенный результат.
+              {t("noEmailNoReg")}
             </p>
             <Button
               variant="primary"
@@ -738,7 +731,7 @@ export const Home: React.FC = () => {
               className="shadow-2xl shadow-fuchsia-500/50"
             >
               <Rocket className="w-5 h-5 mr-2" />
-              Запустить аудит
+              {t("launchAudit")}
               <ArrowRight className="w-4 h-4 ml-2" />
             </Button>
           </div>

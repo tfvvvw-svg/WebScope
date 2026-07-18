@@ -28,7 +28,7 @@ export function getScanHistory(): HistoryItem[] {
   }
 }
 
-export function saveScanReportToHistory(report: { id: string; url: string; title: string; scanDate: string; scores: { overallRating: number }; design: { colorPalette: { hex: string }[] }; category: string } & Record<string, any>): void {
+export function saveScanReportToHistory(report: { id: string; url: string; title: string; scanDate: string; scores: { overallRating: number }; design?: { colorPalette?: { hex: string }[] }; category: string } & Record<string, any>): void {
   try {
     const history = getScanHistory();
     const domain = getDomainName(report.url);
@@ -40,9 +40,9 @@ export function saveScanReportToHistory(report: { id: string; url: string; title
       title: report.title,
       scanDate: report.scanDate,
       overallRating: report.scores.overallRating,
-      primaryColor: report.design.colorPalette[0]?.hex || '#6366f1',
+      primaryColor: report.design?.colorPalette?.[0]?.hex || '#6366f1',
       category: report.category,
-      isFavorite: existingIndex >= 0 ? history[existingIndex].isFavorite : false
+      isFavorite: false,
     };
 
     if (existingIndex >= 0) {

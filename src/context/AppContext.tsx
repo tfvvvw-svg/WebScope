@@ -1,7 +1,7 @@
 import { createContext, useContext, useState, useEffect, useCallback, useMemo } from "react";
 import type { ReactNode } from "react";
 import type { WebScanReport, HistoryItem } from "../types/scan";
-import { scanUrl as apiScanUrl } from "../services/apiService";
+import { scanUrlBackend } from "../services/apiService";
 import {
   getScanHistory,
   saveScanReportToHistory,
@@ -44,7 +44,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   // Compute favorites list from history
   const favorites = useMemo(() => history.filter((item) => item.isFavorite), [history]);
 
-  // Scan a website URL entirely in the browser (no backend required)
+  // Scan a website URL using backend API
   const scanUrl = useCallback(async (url: string): Promise<WebScanReport> => {
     setLoading(true);
     setScanProgress(10);
@@ -63,8 +63,8 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     }, 300);
 
     try {
-      // Run the browser-based scanner
-      const report = await apiScanUrl(url);
+      // Run the backend scanner
+      const report = await scanUrlBackend(url);
 
       clearInterval(interval);
       setScanProgress(100);

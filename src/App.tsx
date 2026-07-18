@@ -27,9 +27,11 @@ const Analysis = lazy(() =>
 const Developer = lazy(() =>
   import("./pages/Developer").then((module) => ({ default: module.Developer })),
 );
-const AiChat = lazy(() =>
-  import("./pages/AiChat").then((module) => ({ default: module.AiChat })),
+
+const AIAssistant = lazy(() =>
+  import("./pages/AIAssistant").then((module) => ({ default: module.AIAssistant })),
 );
+
 const About = lazy(() =>
   import("./pages/About").then((module) => ({ default: module.About })),
 );
@@ -72,7 +74,8 @@ function AnimatedRoutes() {
             <Route path="/compare" element={<Compare />} />
             <Route path="/analysis" element={<Analysis />} />
             <Route path="/developer" element={<Developer />} />
-            <Route path="/ai-chat" element={<AiChat />} />
+            <Route path="/ai-assistant" element={<AIAssistant />} />
+    
             <Route path="/about" element={<About />} />
           </Routes>
         </Suspense>

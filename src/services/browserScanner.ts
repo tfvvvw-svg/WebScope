@@ -828,7 +828,8 @@ async function lookupDNS(
       `https://dns.google/resolve?name=${domain}&type=A`,
       { signal: AbortSignal.timeout(10000) },
     );
-    const data = await res.json();
+    const text = await res.text();
+    const data = text ? JSON.parse(text) : {};
     const out: {
       A: string[];
       AAAA: string[];
@@ -867,7 +868,8 @@ async function checkSSL(
         signal: AbortSignal.timeout(12000),
       },
     );
-    const data = await res.json();
+    const text = await res.text();
+    const data = text ? JSON.parse(text) : {};
     if (data.status === "READY" && data.endpoints?.[0]) {
       const ep = data.endpoints[0];
       const cert = ep.details?.cert || {};
@@ -899,7 +901,8 @@ async function lookupGeo(
         signal: AbortSignal.timeout(10000),
       },
     );
-    const d = await res.json();
+    const text = await res.text();
+    const d = text ? JSON.parse(text) : {};
     if (d.status === "success") {
       const as = d.as || "";
       const hosting = as.includes("Cloudflare")

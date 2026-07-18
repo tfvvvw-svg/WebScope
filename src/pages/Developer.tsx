@@ -118,8 +118,8 @@ export const Developer: React.FC = () => {
       <div>
         <h3 className="text-lg font-bold text-white mb-4">Font Families</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {report.design?.fonts?.length > 0 ? (
-            report.design.fonts.map((font: string, idx: number) => (
+          {(report.design?.fonts?.length || 0) > 0 ? (
+            (report.design?.fonts || []).map((font: string, idx: number) => (
               <div
                 key={idx}
                 className="p-4 bg-zinc-950/40 border border-fuchsia-500/10 rounded-xl"

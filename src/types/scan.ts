@@ -17,6 +17,8 @@ export interface SecurityHeaders {
   xFrameOptions: boolean;
   xssProtection: boolean;
   cors: boolean;
+  referrerPolicy: boolean;
+  permissionsPolicy: boolean;
 }
 
 export interface CookieDetail {
@@ -68,23 +70,23 @@ export interface TechnologyStack {
 }
 
 export interface ServerInfo {
-  hosting: string;
-  provider: string;
-  serverName: string;
-  ipAddress: string;
-  dns: string[];
-  cdn: string[];
-  sslVersion: string;
-  httpVersion: string;
-  serverHeaders: Record<string, string>;
-  serverLocation: string;
+  hosting?: string;
+  provider?: string;
+  serverName?: string;
+  ipAddress?: string;
+  dns?: string[];
+  cdn?: string[];
+  sslVersion?: string;
+  httpVersion?: string;
+  serverHeaders?: Record<string, string>;
+  serverLocation?: string;
 }
 
 export interface SecurityAudit {
   httpsEnabled: boolean;
-  sslStatus: string;
-  sslIssuer: string;
-  sslExpiry: string;
+  sslStatus?: string;
+  sslIssuer?: string;
+  sslExpiry?: string;
   securityHeaders: SecurityHeaders;
   cookiesCount: number;
   cookiesDetails: CookieDetail[];
@@ -101,15 +103,15 @@ export interface PerformanceAudit {
 }
 
 export interface SeoAudit {
-  metaTitle: string;
-  metaDescription: string;
-  openGraph: Record<string, string>;
-  twitterCards: Record<string, string>;
-  robotsTxtStatus: string;
-  sitemapXmlStatus: string;
-  canonicalUrl: string;
-  structuredData: { type: string; detected: boolean }[];
-  indexability: string;
+  metaTitle?: string;
+  metaDescription?: string;
+  openGraph?: Record<string, string>;
+  twitterCards?: Record<string, string>;
+  robotsTxtStatus?: string;
+  sitemapXmlStatus?: string;
+  canonicalUrl?: string;
+  structuredData?: { type: string; detected: boolean }[];
+  indexability?: string;
 }
 
 export interface DesignColor {
@@ -136,14 +138,14 @@ export interface CssVariable {
 }
 
 export interface DesignAudit {
-  colorPalette: DesignColor[];
-  fonts: string[];
+  colorPalette?: DesignColor[];
+  fonts?: string[];
   fontMetrics?: FontMetric[];
-  icons: string[];
+  icons?: string[];
   cssVariables?: CssVariable[];
-  lightDarkTheme: string;
-  responsiveness: string;
-  designStyle: string;
+  lightDarkTheme?: string;
+  responsiveness?: string;
+  designStyle?: string;
 }
 
 export interface SiteCapabilities {
@@ -184,17 +186,17 @@ export interface WebScanReport {
 
   // 🌐 Primary Info
   title: string;
-  description: string;
-  purpose: string;
-  topic: string;
+  description?: string;
+  purpose?: string;
+  topic?: string;
   category: string;
-  targetAudience: string;
-  country: string;
-  primaryLanguage: string;
-  supportedLanguages: string[];
-  domainCreationDate: string;
-  domainAge: string;
-  domainLastUpdated: string;
+  targetAudience?: string;
+  country?: string;
+  primaryLanguage?: string;
+  supportedLanguages?: string[];
+  domainCreationDate?: string;
+  domainAge?: string;
+  domainLastUpdated?: string;
 
   // 🏢 Company Info
   company?: CompanyInfo;

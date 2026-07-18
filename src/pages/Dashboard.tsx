@@ -25,6 +25,7 @@ import {
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { getDomainName } from "../services/scanner";
+import { useLanguage } from "../context/LanguageContext";
 
 const stagger = (i: number) => ({
   initial: { opacity: 0, y: 20 },
@@ -48,6 +49,7 @@ export const Dashboard: React.FC = () => {
   } = useApp();
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
+  const { t } = useLanguage();
 
   const totalScans = history.length;
   const avgRating =
@@ -91,28 +93,28 @@ export const Dashboard: React.FC = () => {
   const stats = [
     {
       icon: <Activity />,
-      label: "Всего аудитов",
+      labelKey: "totalAudits",
       value: totalScans,
       gradient: "from-fuchsia-500 to-purple-500",
       glow: "shadow-fuchsia-500/30",
     },
     {
       icon: <Zap />,
-      label: "Средний рейтинг",
+      labelKey: "averageRating",
       value: `${avgRating}/100`,
       gradient: "from-cyan-500 to-blue-500",
       glow: "shadow-cyan-500/30",
     },
     {
       icon: <Sparkles />,
-      label: "Избранное",
+      labelKey: "favorites",
       value: favoriteCount,
       gradient: "from-amber-500 to-pink-500",
       glow: "shadow-amber-500/30",
     },
     {
       icon: <TrendingUp />,
-      label: "Топ-скан",
+      labelKey: "topScan",
       value: topScore,
       gradient: "from-emerald-500 to-teal-500",
       glow: "shadow-emerald-500/30",
@@ -138,17 +140,16 @@ export const Dashboard: React.FC = () => {
             </span>
           </div>
           <h1 className="text-2xl font-extrabold text-white tracking-tight sm:text-3xl">
-            <span className="animate-gradient-text">Workspace Dashboard</span>
+            <span className="animate-gradient-text">{t("dashboardTitle")}</span>
           </h1>
           <p className="text-xs text-zinc-400 mt-1">
-            Мониторинг аудитов, сравнение профилей производительности и анализ
-            технологических стеков
+            {t("dashboardSubtitle")}
           </p>
         </div>
         <Link to="/">
           <Button variant="primary" size="md">
             <Globe className="w-4 h-4 mr-1.5" />
-            Новый скан
+            {t("newScan")}
           </Button>
         </Link>
       </motion.div>
@@ -157,7 +158,7 @@ export const Dashboard: React.FC = () => {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {stats.map((stat, i) => (
           <motion.div
-            key={stat.label}
+            key={stat.labelKey}
             {...stagger(i)}
             whileHover={{ y: -4, scale: 1.02 }}
             className="group"
@@ -174,7 +175,7 @@ export const Dashboard: React.FC = () => {
                 </div>
                 <div>
                   <span className="text-[10px] uppercase tracking-widest text-zinc-500 font-bold block">
-                    {stat.label}
+                    {t(stat.labelKey)}
                   </span>
                   <span className="text-2xl font-extrabold text-white block mt-1 animate-gradient-text">
                     {stat.value}
@@ -195,18 +196,18 @@ export const Dashboard: React.FC = () => {
         <Card variant="glass">
           <CardHeader className="flex-col sm:flex-row items-start sm:items-center gap-4">
             <div>
-              <CardTitle className="flex items-center gap-2">
-                <Activity className="w-4 h-4 text-fuchsia-400" />
-                История аудитов
-              </CardTitle>
-              <CardDescription>
-                Все ваши сканирования хранятся локально в браузере
-              </CardDescription>
+          <CardTitle className="flex items-center gap-2">
+            <Activity className="w-4 h-4 text-fuchsia-400" />
+            {t("auditHistory")}
+          </CardTitle>
+          <CardDescription>
+            {t("auditHistorySubtitle")}
+          </CardDescription>
             </div>
             <div className="w-full sm:w-72">
               <Input
                 type="text"
-                placeholder="Поиск по домену, названию, категории..."
+                placeholder={t("searchPlaceholder")}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 startIcon={<SearchIcon className="w-4 h-4" />}
@@ -225,15 +226,15 @@ export const Dashboard: React.FC = () => {
                   <Globe className="w-8 h-8 text-fuchsia-400" />
                 </div>
                 <span className="text-zinc-300 font-semibold">
-                  Аудиты не найдены
+                  {t("noAuditsFound")}
                 </span>
                 <span className="text-zinc-500">
-                  Запустите новое сканирование с главной страницы
+                  {t("noAuditsSubtitle")}
                 </span>
                 <Link to="/" className="mt-2">
                   <Button variant="primary" size="sm">
                     <Globe className="w-3.5 h-3.5 mr-1.5" />
-                    Начать сканирование
+                    {t("startScanning")}
                   </Button>
                 </Link>
               </motion.div>
@@ -241,11 +242,11 @@ export const Dashboard: React.FC = () => {
               <table className="w-full text-left border-collapse text-xs">
                 <thead>
                   <tr className="border-b border-fuchsia-500/10 text-zinc-400 uppercase tracking-widest text-[9px] font-bold">
-                    <th className="px-6 py-4">Домен</th>
-                    <th className="px-4 py-4">Категория</th>
-                    <th className="px-4 py-4 text-center">Рейтинг</th>
-                    <th className="px-4 py-4">Дата</th>
-                    <th className="px-6 py-4 text-right">Действия</th>
+                    <th className="px-6 py-4">{t("domain")}</th>
+                    <th className="px-4 py-4">{t("category")}</th>
+                    <th className="px-4 py-4 text-center">{t("rating")}</th>
+                    <th className="px-4 py-4">{t("date")}</th>
+                    <th className="px-6 py-4 text-right">{t("actions")}</th>
                   </tr>
                 </thead>
                 <tbody>

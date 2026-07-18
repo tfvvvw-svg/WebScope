@@ -6,15 +6,12 @@ import {
   GitCompare,
   LayoutDashboard,
   Globe,
-  Sun,
-  Moon,
   Languages,
   Info,
-  Sparkles,
   Code2,
+  Sparkles,
 } from "lucide-react";
 import { useApp } from "../../context/AppContext";
-import { useTheme } from "../../context/ThemeContext";
 import { useLanguage } from "../../context/LanguageContext";
 import type { Language } from "../../context/LanguageContext";
 import { motion } from "framer-motion";
@@ -22,7 +19,6 @@ import { motion } from "framer-motion";
 export const Navbar: React.FC = memo(() => {
   const location = useLocation();
   const { history } = useApp();
-  const { theme, toggleTheme } = useTheme();
   const { language, setLanguage, t } = useLanguage();
 
   const isActive = useCallback(
@@ -64,8 +60,8 @@ export const Navbar: React.FC = memo(() => {
         icon: <Code2 className="w-4 h-4" />,
       },
       {
-        path: "/ai-chat",
-        label: "AI Chat",
+        path: "/ai-assistant",
+        label: "AI Assistant",
         icon: <Sparkles className="w-4 h-4" />,
       },
       {
@@ -135,7 +131,7 @@ export const Navbar: React.FC = memo(() => {
         </nav>
 
         <div className="flex items-center gap-1">
-          <div className="relative flex items-center gap-1 bg-zinc-900/80 rounded-xl px-2.5 py-1.5 border border-fuchsia-500/20 mr-2 shadow-inner">
+          <div className="relative flex items-center gap-1 bg-zinc-900/80 rounded-xl px-2.5 py-1.5 border border-fuchsia-500/20 shadow-inner">
             <Languages className="w-3.5 h-3.5 text-fuchsia-400" />
             <select
               value={language}
@@ -154,20 +150,6 @@ export const Navbar: React.FC = memo(() => {
               </option>
             </select>
           </div>
-
-          <motion.button
-            whileHover={{ scale: 1.1, rotate: 15 }}
-            whileTap={{ scale: 0.95 }}
-            onClick={toggleTheme}
-            className="p-2 rounded-xl bg-zinc-900/80 hover:bg-fuchsia-500/10 transition-colors border border-fuchsia-500/20"
-            aria-label="Toggle theme"
-          >
-            {theme === "dark" ? (
-              <Sun className="w-4 h-4 text-amber-400" />
-            ) : (
-              <Moon className="w-4 h-4 text-fuchsia-400" />
-            )}
-          </motion.button>
         </div>
 
         <div className="flex items-center gap-3">

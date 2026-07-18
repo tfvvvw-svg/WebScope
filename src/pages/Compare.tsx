@@ -13,7 +13,6 @@ import { ScoreBar } from "../components/charts/ScoreBar";
 import { GitCompare, Trash2, Trophy, Sparkles, X as XIcon } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { getDomainName } from "../services/scanner";
-
 const fadeUp = {
   initial: { opacity: 0, y: 20 },
   animate: { opacity: 1, y: 0 },
@@ -21,11 +20,17 @@ const fadeUp = {
 };
 
 export const Compare: React.FC = () => {
-  const { compareReports, setCompareSlot, clearCompareSlots, history, scanUrl } =
-    useApp();
+  const {
+    compareReports,
+    setCompareSlot,
+    clearCompareSlots,
+    history,
+    scanUrl,
+  } = useApp();
   const [showSelectorModal, setShowSelectorModal] = useState<0 | 1 | null>(
     null,
   );
+  // const { t } = useLanguage(); // Not used - all text is in translations
 
   const report1 = compareReports[0];
   const report2 = compareReports[1];
@@ -37,7 +42,7 @@ export const Compare: React.FC = () => {
       setShowSelectorModal(null);
     } catch {
       // If scan fails, try using history item data
-      const historyItem = history.find(h => h.url.includes(url));
+      const historyItem = history.find((h) => h.url.includes(url));
       if (historyItem) {
         setCompareSlot(slotIndex, null);
         setShowSelectorModal(null);
@@ -81,8 +86,8 @@ export const Compare: React.FC = () => {
                   className="w-4 h-4 rounded-full flex-shrink-0 ring-2 ring-fuchsia-500/30"
                   style={{
                     backgroundColor:
-                      report.design.colorPalette[0]?.hex || "#a855f7",
-                    boxShadow: `0 0 12px ${report.design.colorPalette[0]?.hex || "#a855f7"}`,
+                      report.design?.colorPalette?.[0]?.hex || "#a855f7",
+                    boxShadow: `0 0 12px ${report.design?.colorPalette?.[0]?.hex || "#a855f7"}`,
                   }}
                 />
                 <div className="min-w-0">
@@ -246,7 +251,7 @@ export const Compare: React.FC = () => {
                       className="w-3 h-3 rounded-full ring-2 ring-fuchsia-500/30"
                       style={{
                         backgroundColor:
-                          report.design.colorPalette[0]?.hex || "#a855f7",
+                          report.design?.colorPalette?.[0]?.hex || "#a855f7",
                       }}
                     />
                     <CardTitle>{getDomainName(report.url)} — оценки</CardTitle>

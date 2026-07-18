@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { getDomainName } from "../services/scanner";
+import { useLanguage } from "../context/LanguageContext";
 
 const stagger = (i: number) => ({
   initial: { opacity: 0, y: 20 },
@@ -43,6 +44,7 @@ export const History: React.FC = () => {
   const [search, setSearch] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("All");
   const [ratingFilter, setRatingFilter] = useState("All");
+  const { t } = useLanguage();
 
   const categories = [
     "All",
@@ -93,15 +95,14 @@ export const History: React.FC = () => {
       >
         <div className="flex items-center gap-2 mb-2">
           <Badge variant="purple" glow size="md">
-            <HistoryIcon className="w-3 h-3 mr-1" /> {history.length} записей
+            <HistoryIcon className="w-3 h-3 mr-1" /> {history.length} {t("recordsCount")}
           </Badge>
         </div>
         <h1 className="text-2xl font-extrabold text-white tracking-tight sm:text-3xl">
-          <span className="animate-gradient-text">Реестр сканирований</span>
+          <span className="animate-gradient-text">{t("historyTitle")}</span>
         </h1>
         <p className="text-xs text-zinc-400 mt-1">
-          Обзор исторических аудитов, сравнительный анализ и фильтрация по
-          категориям и рейтингу
+          {t("historySubtitle")}
         </p>
       </motion.div>
 
@@ -116,7 +117,7 @@ export const History: React.FC = () => {
             <div className="flex-1 w-full">
               <Input
                 type="text"
-                placeholder="Поиск по домену или названию..."
+                placeholder={t("searchByDomain")}
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 startIcon={<Search className="w-4 h-4" />}
@@ -130,7 +131,7 @@ export const History: React.FC = () => {
                 className="flex items-center gap-1.5 bg-zinc-950/60 px-3 py-2 rounded-xl border border-fuchsia-500/20 text-xs text-zinc-400 hover:border-fuchsia-400 transition-colors"
               >
                 <Filter className="w-3.5 h-3.5 text-fuchsia-400" />
-                <span>Категория:</span>
+                <span>{t("categoryFilter")}</span>
                 <select
                   value={categoryFilter}
                   onChange={(e) => setCategoryFilter(e.target.value)}
@@ -153,24 +154,24 @@ export const History: React.FC = () => {
                 className="flex items-center gap-1.5 bg-zinc-950/60 px-3 py-2 rounded-xl border border-fuchsia-500/20 text-xs text-zinc-400 hover:border-fuchsia-400 transition-colors"
               >
                 <TrendingUp className="w-3.5 h-3.5 text-cyan-400" />
-                <span>Рейтинг:</span>
+                <span>{t("ratingFilter")}</span>
                 <select
                   value={ratingFilter}
                   onChange={(e) => setRatingFilter(e.target.value)}
                   className="bg-transparent border-0 text-white font-semibold focus:outline-none ml-1 text-xs cursor-pointer"
                 >
                   <option value="All" className="bg-zinc-900 text-white">
-                    Все
+                    {t("all")}
                   </option>
                   <option value="Excellent" className="bg-zinc-900 text-white">
-                    ≥ 90 (Excellent)
+                    ≥ 90 ({t("excellent")})
                   </option>
                   <option value="Good" className="bg-zinc-900 text-white">
-                    70-89 (Good)
+                    70-89 ({t("good")})
                   </option>
-                  <option value="Warnings" className="bg-zinc-900 text-white">
-                    &lt; 70 (Warnings)
-                  </option>
+                   <option value="Warnings" className="bg-zinc-900 text-white">
+                     {"< 70"} ({t("warnings")})
+                   </option>
                 </select>
               </motion.div>
             </div>
@@ -190,10 +191,9 @@ export const History: React.FC = () => {
               <Info className="w-8 h-8 text-fuchsia-400" />
             </div>
             <div className="flex flex-col gap-1">
-              <h4 className="text-sm font-bold text-white">История пуста</h4>
+              <h4 className="text-sm font-bold text-white">{t("historyEmpty")}</h4>
               <p className="text-xs text-zinc-500 max-w-md">
-                Запустите первое сканирование с главной страницы, чтобы увидеть
-                результаты здесь
+                {t("historyEmptySubtitle")}
               </p>
             </div>
             <Button
@@ -203,7 +203,7 @@ export const History: React.FC = () => {
               onClick={() => navigate("/")}
             >
               <Sparkles className="w-3.5 h-3.5 mr-1.5" />
-              Сканировать новый сайт
+              {t("scanNewSite")}
             </Button>
           </motion.div>
         ) : (
@@ -250,13 +250,13 @@ export const History: React.FC = () => {
                 <CardContent className="flex-1 flex flex-col justify-between py-4">
                   <div className="text-xs flex flex-col gap-1.5">
                     <div className="flex justify-between text-zinc-400">
-                      <span>Title:</span>
+                      <span>{t("title")}:</span>
                       <span className="text-white font-medium max-w-[180px] truncate text-right">
                         {item.title}
                       </span>
                     </div>
                     <div className="flex justify-between text-zinc-400">
-                      <span>Категория:</span>
+                      <span>{t("category")}:</span>
                       <span className="text-fuchsia-300 font-medium">
                         {item.category}
                       </span>
@@ -278,7 +278,7 @@ export const History: React.FC = () => {
                       <Star
                         className={`w-3.5 h-3.5 ${item.isFavorite ? "fill-current" : ""}`}
                       />
-                      {item.isFavorite ? "В избранном" : "В избранное"}
+                      {item.isFavorite ? t("inFavorites") : t("addToFavorites")}
                     </motion.button>
 
                     <div
@@ -293,7 +293,7 @@ export const History: React.FC = () => {
                           handleCompare(item);
                         }}
                         className="p-1.5 rounded-lg border border-fuchsia-500/20 bg-zinc-950/40 hover:bg-fuchsia-500/10 text-zinc-500 hover:text-cyan-300 transition-colors cursor-pointer"
-                        title="Сравнить"
+                        title={t("compare")}
                       >
                         <GitCompare className="w-3.5 h-3.5" />
                       </motion.button>
@@ -305,7 +305,7 @@ export const History: React.FC = () => {
                           handleInspect(item.url);
                         }}
                         className="p-1.5 rounded-lg border border-fuchsia-500/20 bg-zinc-950/40 hover:bg-fuchsia-500/10 text-zinc-500 hover:text-white transition-colors cursor-pointer"
-                        title="Открыть"
+                        title={t("open")}
                       >
                         <ExternalLink className="w-3.5 h-3.5" />
                       </motion.button>
@@ -317,7 +317,7 @@ export const History: React.FC = () => {
                           deleteReport(item.id);
                         }}
                         className="p-1.5 rounded-lg border border-fuchsia-500/20 bg-zinc-950/40 hover:bg-rose-500/10 text-zinc-500 hover:text-rose-400 transition-colors cursor-pointer"
-                        title="Удалить"
+                        title={t("delete")}
                       >
                         <Trash2 className="w-3.5 h-3.5" />
                       </motion.button>
