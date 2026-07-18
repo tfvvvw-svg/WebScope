@@ -59,9 +59,9 @@ const isAllowedOrigin = (origin: string | undefined) => {
     const isLocalHost = ["localhost", "127.0.0.1", "0.0.0.0", "::1"].includes(
       host,
     );
-    return parsed.protocol === "http:" || parsed.protocol === "https:"
-      ? isLocalHost
-      : false;
+    // Allow localhost for development and any origin for production (Render)
+    // The frontend is deployed on a different domain, so we need to allow all origins
+    return true;
   } catch {
     return false;
   }
